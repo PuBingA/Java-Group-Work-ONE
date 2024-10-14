@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import javax.swing.Icon;
 import com.intellij.openapi.util.IconLoader;
+import javax.swing.*;
 
 
 
@@ -25,7 +26,10 @@ public class Code_Version_Control extends AnAction {
     public void actionPerformed(AnActionEvent e)
     {
         // TODO: insert action logic here
-        System.out.println("芜湖起飞，你好世界");
-        return;
+        SwingUtilities.invokeLater(() -> {
+            System.out.println("芜湖起飞，你好世界");
+            System.out.println("2222");
+            User_Interface code_version =new User_Interface(); // 创建并显示用户界面
+        });
     }
 }
