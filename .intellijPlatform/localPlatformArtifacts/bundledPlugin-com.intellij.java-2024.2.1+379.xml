@@ -1,0 +1,14 @@
+<ivy-module version="2.0">
+  <info organisation="bundledPlugin" module="com.intellij.java" revision="2024.2.1+379"/>
+  <configurations>
+    <conf name="default" visibility="public"/>
+  </configurations>
+  <publications>
+    <artifact name="/ThirdGrade/java/IntelliJ IDEA 2024.2.1/plugins/java" type="directory" conf="default"/>
+  </publications>
+  <dependencies>
+    <dependency org="bundledPlugin" name="com.intellij.copyright" rev="242.21829.142+12"/>
+    <dependency org="bundledPlugin" name="com.intellij.platform.images" rev="242.21829.142+777"/>
+    <dependency org="bundledPlugin" name="com.jetbrains.performancePlugin" rev="242.21829.142+117"/>
+  </dependencies>
+</ivy-module>
