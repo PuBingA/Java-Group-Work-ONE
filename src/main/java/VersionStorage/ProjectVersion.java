@@ -9,14 +9,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 
-public class ProjectVersion implements Serializable {
-
+public class ProjectVersion extends BaseVersion {
     @Serial
     private static final long serialVersionUID = 1L; // 建议指定序列化版本号
-
     private final String versionName;
-    private final String explanation;
-    private final String savedTimeStamp;
+
 
     // 文件夹相对路径名称
    // private final ArrayList<String> folderNames;
@@ -25,9 +22,8 @@ public class ProjectVersion implements Serializable {
 
     public ProjectVersion(String versionName, String explanation, String savedTimeStamp) {
         // 初始化
+        super(savedTimeStamp,explanation);
         this.versionName = versionName;
-        this.explanation = explanation;
-        this.savedTimeStamp = savedTimeStamp;
        // this.folderNames = new ArrayList<>(); // 初始化文件夹名称列表
         this.fileNames = new HashMap<>(); // 初始化文件映射
     }
@@ -62,15 +58,6 @@ public class ProjectVersion implements Serializable {
     public String getVersionName() {
         return versionName;
     }
-
-    public String getExplanation() {
-        return explanation;
-    }
-
-    public String getSavedTimeStamp() {
-        return savedTimeStamp;
-    }
-
 
 
     public Map<String, String> getFileNames() {

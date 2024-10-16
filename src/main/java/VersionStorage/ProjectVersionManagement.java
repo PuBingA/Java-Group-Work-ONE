@@ -42,8 +42,12 @@ public class ProjectVersionManagement implements Serializable {
         return versions.get(versionName);
     }
 
-    public ArrayList<String> getVersions(){
+    public ArrayList<String> getVersionNames(){
         return versionNames;
+    }
+
+    public Map<String,ProjectVersion> getVersions(){
+        return versions;
     }
 
 

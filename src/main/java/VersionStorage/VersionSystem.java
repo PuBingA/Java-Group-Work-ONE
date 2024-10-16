@@ -5,6 +5,9 @@ import java.nio.file.*;
 import java.security.MessageDigest;
 import java.util.*;
 
+import static VersionStorage.FileManageHelper.*;
+
+
 
 public class VersionSystem implements VersionController {
     // 哈希值和fileVersion的映射
@@ -20,39 +23,7 @@ public class VersionSystem implements VersionController {
         hashCodeToFile = new HashMap<>();
     }
 
-    public static ArrayList<File> extractFiles(String projectPath, String initPath) throws Exception {
-        ArrayList<File> fileList = new ArrayList<>();
-        File projectDirectory = new File(projectPath);
 
-        // 检查项目路径是否合法
-        if (!projectDirectory.exists() || !projectDirectory.isDirectory()) {
-            throw new Exception("Project path is invalid or does not exist.");
-        }
-
-        // 递归提取文件
-        extractFilesRecursively(projectDirectory, initPath, fileList);
-        return fileList;
-    }
-
-    private static void extractFilesRecursively(File directory, String initPath, ArrayList<File> fileList) {
-        // 获取当前目录下的所有文件和子目录
-        File[] files = directory.listFiles();
-        if(files!=null){
-            for (File file : files) {
-                // 如果是目录，递归调用
-                if (file.isDirectory()) {
-                    extractFilesRecursively(file, initPath, fileList);
-                } else {
-                    // 检查文件路径是否以 initPath 开头
-                    if (!file.getAbsolutePath().startsWith(initPath)) {
-                        fileList.add(file); // 添加到列表中
-                    }
-                }
-            }
-
-        }
-
-    }
 
     // 保存项目
     public void saveProject(String initPath,String projectPath,String projectName,String explanation) throws Exception{
@@ -68,7 +39,12 @@ public class VersionSystem implements VersionController {
                 Files.createDirectories(projectVersionPath);
 
                 // 提取projectPath中的所有文件
-                ArrayList<File> fileList=extractFiles(projectPath,projectName);
+                ArrayList<File> fileList=extractFiles(projectPath,initPath);
+                // 调试
+                for (File file : fileList) {
+                    System.out.println(file.getAbsolutePath()+"\n");
+                }
+                System.out.println("\n\n\n\n\n");
 
                 // 处理文件和文件夹
                 for (File file : Objects.requireNonNull(fileList)) {
@@ -100,6 +76,7 @@ public class VersionSystem implements VersionController {
                         String relativePath = getFileRelativePath(absoluteFilePath, projectPath);
                         // 计算hashcode
                         String hashCode = calculateHashCode(file);
+                        System.out.println(hashCode);
                         // 获取hashCode对应的fileversion
                         FileVersion newFileVersion = hashCodeToFile.get(hashCode);
 
@@ -131,9 +108,6 @@ public class VersionSystem implements VersionController {
                 pvManager.addProjectVersion(tempProjectVersion);
 
             }
-            catch (IOException e) {
-                System.err.println("IO异常: " + e.getMessage());
-            }
             catch (Exception e) {
                 // 出现错误时要检查并清空 initPath/projectName 的整个文件夹
                 System.out.println(e.getMessage());
@@ -148,54 +122,6 @@ public class VersionSystem implements VersionController {
     }
 
 
-    // 在路径下清空版本文件夹
-    public void clearProjectFolder(String initPath, String projectName) {
-        System.out.println("clear directory");
-        File projectFolder = new File(initPath + File.separator + projectName);
-        if (projectFolder.exists()) {
-            for (File file : Objects.requireNonNull(projectFolder.listFiles())) {
-                file.delete(); // 删除文件
-            }
-            projectFolder.delete(); // 删除文件夹
-        }
-    }
-
-    // 计算文件的哈希值
-    public String calculateHashCode(File file) throws Exception {
-        // 创建 SHA-256 消息摘要实例
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-
-        // 读取文件内容并计算哈希值
-        try (var inputStream = Files.newInputStream(file.toPath())) {
-            byte[] buffer = new byte[8192]; // 8KB 缓冲区
-            int bytesRead;
-
-            // 持续读取文件，直到没有更多字节
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                digest.update(buffer, 0, bytesRead); // 更新消息摘要
-            }
-        }
-
-        // 获取计算得到的哈希字节数组
-        byte[] hashBytes = digest.digest();
-
-        // 将哈希字节转换为十六进制字符串
-        StringBuilder hashString = new StringBuilder();
-        for (byte b : hashBytes) {
-            hashString.append(String.format("%02x", b)); // 转换为十六进制字符串
-        }
-
-        return hashString.toString(); // 返回哈希字符串
-    }
-
-
-
-    public String getFileRelativePath(String pathToFile,String initPath) throws Exception{
-        System.out.println("pathToFile="+pathToFile);
-        System.out.println("initPath="+initPath);
-        return pathToFile.replace(initPath + File.separator, "");
-    }
-
     // 在路径下保存版本索引
     public void saveVersionControlSystem(String savingPath) throws Exception {
         // 创建完整的保存路径
@@ -205,8 +131,13 @@ public class VersionSystem implements VersionController {
             // 创建文件及其父目录（如果不存在）
             Path path = Paths.get(combinedPath);
             Files.createDirectories(path.getParent()); // 创建父目录
-            Files.createFile(path); // 创建文件
-            System.out.println("创建文件成功");
+            if (!Files.exists(path)) {
+                Files.createFile(path); // 创建文件
+                System.out.println("创建文件成功");
+            } else {
+                System.out.println("文件已存在，直接覆盖写入");
+            }
+
 
 
             // 使用 ObjectOutputStream 进行对象序列化
@@ -243,7 +174,11 @@ public class VersionSystem implements VersionController {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             // 加载 hashCodeToFile 的映射
             hashCodeToFile.clear(); // 清空现有映射
-            hashCodeToFile.putAll((Map<String, FileVersion>) ois.readObject());
+            Object obj = ois.readObject();
+            @SuppressWarnings("unchecked")
+            Map<String, FileVersion> versionMap = (Map<String, FileVersion>) obj;
+            hashCodeToFile.putAll(versionMap);
+
 
             // 加载 pvManager
             pvManager = (ProjectVersionManagement) ois.readObject();
@@ -251,26 +186,59 @@ public class VersionSystem implements VersionController {
             // 加载 fvManager
             fvManager = (FileVersionManagement) ois.readObject();
 
+            // 调试
+            Map<String, ProjectVersion> versions = pvManager.getVersions();
+
+            for (Map.Entry<String, ProjectVersion> entry : versions.entrySet()) {
+                String key = entry.getKey();
+                ProjectVersion value = entry.getValue();
+
+                // 输出键和值
+                System.out.println("Key: " + key + ", Value: " + value);
+
+                // 获取并输出 projectVersion 中的 fileNames
+                Map<String, String> fileNames = value.getFileNames();  // 假设有 getFileNames() 方法
+
+                // 遍历并输出 fileNames 的键值对
+                for (Map.Entry<String, String> fileEntry : fileNames.entrySet()) {
+                    String fileKey = fileEntry.getKey();
+                    String fileName = fileEntry.getValue();
+
+                    // 输出 fileNames 中的键和值
+                    System.out.println("  File Key: " + fileKey + ", File Name: " + fileName);
+                }
+            }
 
             System.out.println(pvManager);
             System.out.println(fvManager);
+            System.out.println("调试结束\n\n\n\n");
         } catch (IOException | ClassNotFoundException e) {
             throw new Exception("加载版本控制系统时出错: " + e.getMessage(), e);
         }
+
+
     }
 
 
     // 获取所有版本名称
     public ArrayList<String> getVersions(){
-        return pvManager.getVersions();
+        return pvManager.getVersionNames();
     }
 
     // 获取某版本下的某文件的存储路径
     public String getFileVersion(String versionName,String fileName){
-        ProjectVersion pv= pvManager.getVersion(versionName);
-        String hashCode=pv.getFileNames().get(fileName);
-        FileVersion fv=hashCodeToFile.get(hashCode);
-        return fv.getFileVersionSavedPath();// 获取文件存储路径
+        try{
+            ProjectVersion pv= pvManager.getVersion(versionName);
+            String hashCode=pv.getFileNames().get(fileName);
+            FileVersion fv=hashCodeToFile.get(hashCode);
+            return fv.getFileVersionSavedPath();// 获取文件存储路径
+        }
+        catch (Exception e){
+            System.out.println(e.getMessage());
+            throw e;
+        }
+
+
     }
 
 
