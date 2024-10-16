@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import javax.swing.Icon;
 import com.intellij.openapi.util.IconLoader;
 import javax.swing.*;
+import com.intellij.openapi.project.Project;
 
 
 
@@ -25,11 +26,12 @@ public class Code_Version_Control extends AnAction {
     //点击插件后执行的函数
     public void actionPerformed(AnActionEvent e)
     {
+        Project project = e.getProject();
         // TODO: insert action logic here
         SwingUtilities.invokeLater(() -> {
             System.out.println("芜湖起飞，你好世界");
             System.out.println("2222");
-            User_Interface code_version =new User_Interface(); // 创建并显示用户界面
+            User_Interface code_version =new User_Interface(project); // 创建并显示用户界面
         });
     }
 }

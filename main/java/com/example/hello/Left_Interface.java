@@ -15,6 +15,7 @@ public class Left_Interface extends JPanel
     DefaultListModel<String> Changes_Model;
     DefaultListModel<String> History_Model;
     Color Left_Color = new Color(193, 167, 221);
+
     private Button_Listener listener;  //回调接口
 
     public Left_Interface(Button_Listener listener)
