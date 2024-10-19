@@ -1,8 +1,12 @@
 package com.example.demo_1;
 
+
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
+
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import VersionStorage.*;
 
@@ -16,9 +20,10 @@ import java.util.List;
 import VersionStorage.FileManageHelper.*;
 
 
+
 public class PrintHelloWorld extends AnAction {
 
-    private final VersionController versionController= new VersionSystem();
+    private final VersionController versionController= new VersionControlSystem();
 
     @Override
     public void actionPerformed(AnActionEvent e){
@@ -26,42 +31,41 @@ public class PrintHelloWorld extends AnAction {
             Project project = e.getProject();
             if (project != null) {
                 // 获取项目的根目录
-                String projectDir = project.getBasePath();
+                String projectDir = Paths.get(project.getBasePath(),"src").toString();
 
 
                 if (projectDir != null) {
 
-                    projectDir = Paths.get(projectDir).normalize().toString();  // 标准化路径
-                    // String projectDir_1=Paths.get(projectDir,"src").toString();
-                    // 打印当前工作文件夹路径 完整路径
-                    System.out.println("Current working directory: " + projectDir);
+                    String path = project.getBasePath();
 
-
-                    String savingPath=Paths.get(projectDir,".plugin").toString();
-                    System.out.println("Saving path: " + savingPath);
-
-                    // 首先 load
-                    versionController.loadVersionControlSystem(savingPath);
+                    // 获取
+                    versionController.loadVersionControlSystem(path);
                     System.out.println("load success");
 
-                    // 然后save
-                    //versionController.saveProject(savingPath,projectDir,"version_5","test_1");
-                    System.out.println("保存文件版本成功");
 
-                    // 然后save版本控制索引
-                    //versionController.saveVersionControlSystem(savingPath);
-                    System.out.println("saveSuccess");
+                    // 存储版本
+                    versionController.saveProject("111", path,projectDir,"115","115");
+                    //System.out.println("save file success");
 
-                    //File file_1=new File("F:\\ThirdGrade\\java\\untitled\\.plugin\\version_4\\src\\newName.java");
-                    //String hashCode_1=FileManageHelper.calculateHashCode(file_1);
-                    //System.out.println("hashCode 1: " + hashCode_1);
-                    //File file_2=new File("F:\\ThirdGrade\\java\\untitled\\.plugin\\version_3\\src\\Main.java");
-                    //String hashCode_2=FileManageHelper.calculateHashCode(file_2);
-                    //System.out.println("hashCode 2: " + hashCode_2);
+                    // 开始
+                    versionController.saveVersionControlSystem(path);
+                    //System.out.println("success");
 
-                    // 然后输出某一版本的对应文件存储位置
-                    //String path= versionController.getFileVersion("version_1",".gitignore");
-                    //System.out.println(path);
+                    // 获取所有分支名称
+                    var v1=versionController.getBranches();
+                    var v2=versionController.getFileVersion("111","114","Main.java",path);
+                    var v3=versionController.getVersions("111");
+                    var v4=versionController.getVersionFileDiffs("111","114");
+                    var v5=versionController.getFiles(path,"111","113");
+                    System.out.println("c");
+                    //var temp=versionController.getVersions("111");
+
+                    //var temp_1=versionController.getFileVersions("111","src\\Hello.java");
+
+                    //System.out.println(temp_1);
+
+
+
                 }
             } else {
                 System.out.println("No active project found.");

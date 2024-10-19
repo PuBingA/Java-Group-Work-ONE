@@ -7,10 +7,10 @@ public class ProjectVersionManagement implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L; // 建议指定序列化版本号
 
-    // 版本列表
-
+    // versionName to projectversion
     private final Map<String,ProjectVersion> versions;
     private final ArrayList<String> versionNames;
+
 
     // 构造函数
     public ProjectVersionManagement() {
@@ -19,17 +19,14 @@ public class ProjectVersionManagement implements Serializable {
     }
 
 
-    // 重名监测
-    public boolean checkName(String versionName) throws Exception {
-        // 检查版本名称是否已存在
-        return !versions.containsKey(versionName);
-    }
-
-
     // 增加版本
     public void addProjectVersion(ProjectVersion pv) throws Exception {
-        // 检查版本名称是否重复
-        //checkName(pv.getVersionName());
+        ProjectVersion pVersion=null;
+        if(!versionNames.isEmpty()) {
+            pVersion = versions.get(versionNames.getLast());
+        }
+
+        pv.getDiffs(pVersion);
 
         // 将新的 ProjectVersion 添加到版本列表中
         versions.put(pv.getVersionName(), pv);
@@ -37,17 +34,35 @@ public class ProjectVersionManagement implements Serializable {
         versionNames.add(pv.getVersionName());
     }
 
-    // 根据版本名称获取 版本
-    public ProjectVersion getVersion(String versionName){
-        return versions.get(versionName);
+    public String getFile(String versionName,String fileName) throws Exception{
+        var pv=versions.get(versionName);
+        if(pv!=null){
+            return pv.getHashCode(fileName);
+        }
+        else{
+            throw new Exception("Version Name "+versionName+" not found");
+        }
     }
+
 
     public ArrayList<String> getVersionNames(){
         return versionNames;
     }
 
-    public Map<String,ProjectVersion> getVersions(){
-        return versions;
+
+    public  Map<String,FileChangeType> getVersionFileDiffs(String versionName){
+        return versions.get(versionName).getChangedFiles();
+    }
+
+    public Map<String,String> getFiles(String versionName){
+        ProjectVersion pv=versions.get(versionName);
+        return pv.getFiles();
+    }
+
+    public void checkVersionName(String versionName) throws Exception{
+        if(versionNames.contains(versionName)) {
+           throw new Exception("Version Name "+versionName+" already exists");
+        }
     }
 
 

@@ -1,49 +1,34 @@
 package VersionStorage;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class FileManageHelper {
-    public static ArrayList<File> extractFiles(String projectPath, String initPath) throws Exception {
-        ArrayList<File> fileList = new ArrayList<>();
-        File projectDirectory = new File(projectPath);
+    // 提取所有文件
+    public static ArrayList<File> extractFiles(String projectPath) throws Exception {
+        ArrayList<File> filesList = new ArrayList<>();
 
-        // 检查项目路径是否合法
-        if (!projectDirectory.exists() || !projectDirectory.isDirectory()) {
-            throw new Exception("Project path is invalid or does not exist.");
+        try (Stream<Path> paths = Files.walk(Paths.get(projectPath))) {
+            paths.filter(Files::isRegularFile) // 仅获取文件
+                    .forEach(path -> filesList.add(path.toFile())); // 将文件添加到列表中
+        } catch (IOException e) {
+            System.err.println("Error reading files: " + e.getMessage());
         }
 
-        // 递归提取文件
-        extractFilesRecursively(projectDirectory, initPath, fileList);
-        return fileList;
+        return filesList;
     }
 
-    private static void extractFilesRecursively(File directory, String initPath, ArrayList<File> fileList) {
-        // 获取当前目录下的所有文件和子目录
-        File[] files = directory.listFiles();
-        if(files!=null){
-            for (File file : files) {
-                // 如果是目录，递归调用
-                if (file.isDirectory()) {
-                    extractFilesRecursively(file, initPath, fileList);
-                } else {
-                    // 检查文件路径是否以 initPath 开头
-                    if (!file.getAbsolutePath().startsWith(initPath)) {
-                        fileList.add(file); // 添加到列表中
-                    }
-                }
-            }
 
-        }
-
-    }
-
-    public static String getFileRelativePath(String pathToFile,String initPath) {
-
-        return pathToFile.replace(initPath + File.separator, "");
+    public static Path getFileRelativePath(Path pathToFile,Path initPath) {
+        return initPath.relativize(pathToFile);
     }
 
     // 计算文件的哈希值
