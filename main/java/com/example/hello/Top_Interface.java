@@ -5,17 +5,25 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 public class Top_Interface extends JPanel {
 
-    private String currentBranch = "Main"; // 当前分支名称
+    String currentBranch = "Main"; // 当前分支名称
     private JLabel branchLabel; // 用于显示当前分支的标签
+
+    private Button_Listener listener; //监听器，与主类沟通
 
     ArrayList<String> branchNames;   //存储分支名字
     ArrayList<JButton> branchButtons; //显示分支按钮
 
-    public Top_Interface() {
+    public Top_Interface(Button_Listener listener,Set<String>branch_init) {
         // 设置布局和样式
+
+        this.listener=listener; //用于回调
+
         setLayout(new BorderLayout());
         setBackground(new Color(50, 48, 48));  // 整个面板的背景设置为黑色
         setPreferredSize(new Dimension(0, 80)); // 设置顶部高度，去除不需要的下方内容区域
@@ -44,35 +52,41 @@ public class Top_Interface extends JPanel {
 
 
 
-
-
-
         // 右侧显示多个分支按钮
         JPanel rightPanel = new JPanel();
         rightPanel.setBackground(new Color(50, 48, 48)); // 保持黑色背景
         rightPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
 
-        // 分支名称数组
-        branchNames =new ArrayList<>();
-        branchNames.add("Main");
-        branchNames.add("test1");
-        branchNames.add("test2");
-        branchNames.add("test3");
-
+        // 分支读取
+        Set<String> branchCopy = new HashSet<>(branch_init);
+        branchNames =new ArrayList<>(branchCopy);
         branchButtons = new ArrayList<>();
+        if(branchNames.isEmpty())
+        {
+            System.out.println("空分支，自行建立一个Main分支");
+            branchNames.add(currentBranch);
+        }
+        System.out.println("下面输出所有分支名字：");
+        System.out.println(branchNames);
+
+
+
         // 创建每个分支按钮
         for (int i = 0; i < branchNames.size(); i++) {
             branchButtons.add(new JButton(branchNames.get(i)));
             customizeButton(branchButtons.get(i), branchNames.get(i));
             rightPanel.add(branchButtons.get(i));
         }
-        branchButtons.get(0).setBackground(new Color(63, 60, 246)); //主分支要突出显示
+
+        for(JButton button: branchButtons)
+            if(button.getText().equals(currentBranch))
+               button.setBackground(new Color(63, 60, 246));//默认选中主分支
 
 
 
         /*------中间按钮触发函数---------------*/
 
-        //新建分支
+        //新建分支函数
         BranchBuild.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e)
@@ -90,7 +104,7 @@ public class Top_Interface extends JPanel {
                     JOptionPane.showMessageDialog(null, "Error: Please use English", "Error", JOptionPane.ERROR_MESSAGE);
                 else
                 {
-                    System.out.println(input);
+                    System.out.println("尝试添加分支："+input);
                     if(branchNames.size()>=9)
                         JOptionPane.showMessageDialog(null, "Error: Too many Branches!", "Error", JOptionPane.ERROR_MESSAGE);
 
@@ -106,12 +120,50 @@ public class Top_Interface extends JPanel {
                         rightPanel.add(branchButtons.getLast());
                         rightPanel.revalidate();
                         rightPanel.repaint();
+                        listener.Branch_Build(input);
                     }
 
 
                 }
                 // 检查中文字符的正则表达式
 
+            }
+        });
+
+        //分支合并函数
+        BranchMerge.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                // 创建一个新的对话框
+                JDialog dialog = new JDialog();
+                dialog.setTitle("Choose a Branch to Merge Into:"+currentBranch);
+                dialog.setSize(300, 200);
+                dialog.setLocationRelativeTo(null); // 居中显示
+                dialog.setLayout(new FlowLayout());
+
+                // 在对话框中添加按钮
+                for (String branch : branchNames) {
+                    if (!branch.equals(currentBranch)) {
+                        JButton branchButton = new JButton(branch);
+                        branchButton.addActionListener(new ActionListener()
+                        {
+                            @Override
+                            public void actionPerformed(ActionEvent event)
+                            {
+                                // 处理分支合并逻辑
+                                System.out.println("Merging into branch: " + branch);
+                                // 在这里可以添加实际的合并逻辑
+                                dialog.dispose(); // 关闭对话框
+                                listener.Merge_Click(currentBranch,branch);
+                            }
+                        });
+                        dialog.add(branchButton); // 将按钮添加到对话框
+                    }
+                }
+
+                dialog.setVisible(true); // 显示对话框
             }
         });
 
@@ -142,8 +194,23 @@ public class Top_Interface extends JPanel {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                currentBranch = branchName; // 更新当前分支名称
-                branchLabel.setText("Branch: " + currentBranch); // 更新左上角的分支名称显示
+                if(!Objects.equals(currentBranch, branchName)) {
+                    currentBranch = branchName; // 更新当前分支名称
+                    branchLabel.setText("Branch: " + currentBranch); // 更新左上角的分支名称显示
+
+
+                    if (listener != null)
+                        listener.Branch_Change(branchName);
+                    else
+                        System.out.println("没传入");
+                    //同时用颜色突出选中的分支
+                    for (JButton btn : branchButtons) {
+                        btn.setBackground(new Color(102, 200, 243)); // 恢复默认背景色
+                    }
+                    button.setBackground(new Color(63, 60, 246)); // 自定义选中颜色
+                }
+                else
+                    System.out.println("你已经在这个分支里面了！");
             }
         });
     }

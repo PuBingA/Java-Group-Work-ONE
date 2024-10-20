@@ -13,37 +13,36 @@ public class ProjectVersion extends BaseVersion {
     @Serial
     private static final long serialVersionUID = 1L; // 建议指定序列化版本号
     private final String versionName;
-
-
-    // 文件夹相对路径名称
-   // private final ArrayList<String> folderNames;
     // 文件相对路径名称-文件哈希值
     private final Map<String, String> fileNames;
+    // 文件相对路径-更改
+    private Map<String,FileChangeType> changedFiles;
+
+    // 拷贝构造函数
+    public ProjectVersion(ProjectVersion other) {
+        super(other.getTimestamp(), other.getExplanation()); // 调用父类构造函数
+        this.versionName = other.versionName;
+        this.fileNames = new HashMap<>(other.fileNames); // 深拷贝文件映射
+        this.changedFiles = new HashMap<>(other.changedFiles); // 深拷贝更改映射
+    }
 
     public ProjectVersion(String versionName, String explanation, String savedTimeStamp) {
         // 初始化
         super(savedTimeStamp,explanation);
         this.versionName = versionName;
-       // this.folderNames = new ArrayList<>(); // 初始化文件夹名称列表
         this.fileNames = new HashMap<>(); // 初始化文件映射
+        this.changedFiles = new HashMap<>();
     }
 
-    // 增加文件夹名称
-   /* public void addFolderName(String folderName) throws Exception {
-        if (folderName == null || folderName.isEmpty()) {
-            throw new Exception("Folder name cannot be null or empty.");
-        }
-        // 检查文件夹名称是否已经存在
-        if (!folderNames.contains(folderName)) {
-            folderNames.add(folderName); // 添加文件夹名称
-        } else {
-            throw new Exception("Folder name '" + folderName + "' already exists.");
-        }
-    }*/
+    public ProjectVersion(String versionName, String explanation, String savedTimeStamp,Map<String, String> fileNames) {
+        super(savedTimeStamp,explanation);
+        this.versionName = versionName;
+        this.fileNames = new HashMap<>(fileNames); // 初始化文件映射
+        this.changedFiles = new HashMap<>();
+    }
 
-    // 增加文件映射
     public void addFileName(String fileName, String hashCode) throws Exception {
-        if (fileName == null || fileName.isEmpty() || hashCode == null || hashCode.isEmpty()) {
+        if (fileName == null || fileName.isEmpty() || hashCode==null||hashCode.isEmpty()) {
             throw new Exception("File name and hash code cannot be null or empty.");
         }
         // 检查文件名是否已经存在
@@ -54,13 +53,78 @@ public class ProjectVersion extends BaseVersion {
         }
     }
 
+
     // 所有属性的 getter 方法
     public String getVersionName() {
         return versionName;
     }
 
+    // 获取差异
+    public Map<String,FileChangeType> getDiffs(ProjectVersion lastVersion) throws Exception {
+        changedFiles=new HashMap<>(getVersionDiffs(lastVersion));
+        return changedFiles;
+    }
+
+    public Map<String,FileChangeType> getVersionDiffs(ProjectVersion version)throws Exception {
+        Map<String,FileChangeType> changedFiles = new HashMap<>();
+
+        if (version == null) {
+
+            for (String fileName : fileNames.keySet()) {
+                changedFiles.put(fileName, FileChangeType.ADDED); // 所有文件为新增
+            }
+           return changedFiles;
+        }
+
+        Set<String> allFileNames = new HashSet<>(fileNames.keySet());
+        allFileNames.addAll(version.getFileNames().keySet());
+        // 遍历所有文件名，并比较哈希值来确定更改类型
+        for (String fileName : allFileNames) {
+            String currentHash = fileNames.get(fileName); // 当前版本哈希
+            String lastHash = version.getFileNames().get(fileName); // 上一版本哈希
+
+            if (currentHash == null) {
+                // 当前版本没有该文件，文件被删除
+                changedFiles.put(fileName, FileChangeType.DELETED);
+            } else if (lastHash == null) {
+                // 上一版本没有该文件，文件为新增
+                changedFiles.put(fileName, FileChangeType.ADDED);
+            } else if (!currentHash.equals(lastHash)) {
+                // 文件存在，但哈希值不同，文件被修改
+                changedFiles.put(fileName, FileChangeType.MODIFIED);
+            }
+        }
+        return changedFiles;
+    }
+
 
     public Map<String, String> getFileNames() {
-        return new HashMap<>(fileNames); // 返回文件映射的副本
+        return new HashMap<>(fileNames);
     }
+
+    public Map<String,FileChangeType> getChangedFiles() {
+        return new HashMap<>(changedFiles);
+    }
+
+    public Map<String,String> getFiles(){
+        return fileNames;
+    }
+
+    public String getHashCode(String fileName) throws Exception{
+        return fileNames.get(fileName);
+    }
+
+    public HashSet<String> getDeletedFiles() {
+        HashSet<String> deletedFiles = new HashSet<>();
+
+        for (Map.Entry<String, FileChangeType> entry : changedFiles.entrySet()) {
+            if (entry.getValue() == FileChangeType.DELETED) {
+                deletedFiles.add(entry.getKey());
+            }
+        }
+
+        return deletedFiles;
+    }
+
+
 }

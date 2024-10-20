@@ -14,6 +14,7 @@ public class FileVersion extends BaseVersion {
     private final String hashCode;
 
 
+
     public FileVersion(String hashCode, String pathToFile, String explanation, String timestamp) {
         // 初始化
         super(timestamp, explanation);
@@ -30,6 +31,7 @@ public class FileVersion extends BaseVersion {
     public String getHashCode() {
         return hashCode;
     }
+
 
 }
 
