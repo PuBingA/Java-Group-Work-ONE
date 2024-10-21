@@ -222,6 +222,70 @@ public class VersionControlSystem implements VersionController,Serializable {
 
     }
 
+    // 获取两个分支上的不同文件 1是合并到的分支
+    public Map<String,FileChangeType> getFileDiffsBetweenBranches(String branchName_1,String branchName_2) throws Exception{
+        ProjectVersionManagement pvManager_1=branchNameToProjectVersion.get(branchName_1);
+        ProjectVersionManagement pvManager_2=branchNameToProjectVersion.get(branchName_2);
+        if(pvManager_1==null||pvManager_2==null){
+            throw new Exception("Branch not found: " + branchName_1+"/"+branchName_2);
+        }
+        else{
+            var pv_1=pvManager_1.getLastProjectVersion();
+            var pv_2=pvManager_2.getLastProjectVersion();
+
+            if(pv_2==null){
+                throw new Exception("No changes to merge");
+            }
+
+            // pv_1没东西
+            if (pv_1 == null) {
+                return new HashMap<>();
+            }
+            else{
+                var versionDiffs=pv_1.getVersionDiffs(pv_2);
+                if(versionDiffs.isEmpty()&&pvManager_2.getDeletedVersions().isEmpty()){
+                    throw new Exception("No changes to merge");
+                }
+                else{
+                    return versionDiffs;
+                }
+            }
+
+        }
+
+    }
+
+    // 对应文件保存哪个版本
+    public void mergeBranches(String mergeName,String branchName_1,String branchName_2,Map<String,String> saveFiles) throws Exception{
+        var pvManager_1=branchNameToProjectVersion.get(branchName_1);
+        var pvManager_2=branchNameToProjectVersion.get(branchName_2);
+        if(pvManager_1==null||pvManager_2==null){
+            throw new Exception("Branch not found: " + branchName_1+"/"+branchName_2);
+        }
+
+        pvManager_1.mergeBranches(mergeName,pvManager_2,saveFiles);
+
+
+    }
+
+    // 获取上次
+    public Map<String,String> getLastVersionFiles(String initPath,String branchName) throws Exception{
+        var temp=branchNameToProjectVersion.get(branchName);
+        var arrayList=temp.getVersionNames();
+        if(arrayList.isEmpty()){
+            return new HashMap<>();
+        }
+        else{
+            return getFiles(initPath,branchName,temp.getVersionNames().getLast());
+        }
+
+    }
+
+    public void createNewBranch(String newBranchName,String oldBranchName) throws Exception{
+        var temp=branchNameToProjectVersion.computeIfAbsent(oldBranchName,k->new ProjectVersionManagement());
+        var newPvManager=new ProjectVersionManagement(temp);
+        branchNameToProjectVersion.put(newBranchName,newPvManager);
+    }
 
 
 
