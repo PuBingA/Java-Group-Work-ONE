@@ -243,11 +243,17 @@ public class VersionControlSystem implements VersionController,Serializable {
             }
             else{
                 var versionDiffs=pv_1.getVersionDiffs(pv_2);
-                if(versionDiffs.isEmpty()&&pvManager_2.getDeletedVersions().isEmpty()){
+                if (versionDiffs.isEmpty() && pvManager_2.getDeletedVersions().isEmpty()) {
                     throw new Exception("No changes to merge");
-                }
-                else{
-                    return versionDiffs;
+                } else {
+                    // 检查 versionDiffs 中是否所有的值都是 "added"
+                    boolean allAdded = versionDiffs.values().stream().allMatch(changeType -> changeType.equals(FileChangeType.ADDED));
+
+                    if (allAdded) {
+                        throw new Exception("All changes are 'added', no meaningful changes to merge");
+                    }
+
+                    return versionDiffs;  // 如果没有问题，返回 versionDiffs
                 }
             }
 
